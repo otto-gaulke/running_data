@@ -19,3 +19,11 @@ if 'running_data.csv' not in files:
   pd.to_csv('running_data.csv', index=False)
 
 df = pd.read_csv('running_data.csv')
+
+for parse in files_parse:
+  data = tr.TCXReader(parse).read()
+
+  for workout in data.workouts():
+    for track in workout.track:
+      for point in track.track_points:
+        

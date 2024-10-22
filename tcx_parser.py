@@ -14,7 +14,8 @@ with open('parse_history.txt', 'r') as parse_read:
   parsed_files = parse_read.read().splitlines()
 
 cols = ['date', 'time', 'latitude', 'longitude',
-        'elevation_meters', 'distance_meters', 'heart_rate']
+        'elevation_meters', 'elevation_feet', 'elevation_change_feet',
+        'distance_meters', 'distance_feet', 'distance_miles', 'heart_rate']
 
 if 'running_data.csv' not in host_files:
   df = pd.DataFrame(columns=cols)
@@ -27,6 +28,8 @@ tcx_files = os.listdir(os.getcwd())
 files_parse = [x for x in tcx_files if x not in parsed_files and x[-4:] == '.tcx']
 
 for parse in files_parse:
+  print(f'Processing {parse}...')
+  
   data = tr.TCXReader().read(parse)
   trackpoints = data.trackpoints
 
@@ -51,4 +54,26 @@ for parse in files_parse:
   distance_ft = [x * 3.28084 for x in distance_m]
   distance_mi = [x * 0.000621371 for x in distance_m]
 
-x = 1
+  elevation_ft_delta = []
+
+  for index, item in enumerate(elevation_ft):
+    if index == 0:
+      elevation_ft_delta.append(0.000)
+    else:
+      elevation_ft_delta.append(elevation_ft[index] - elevation_ft[index - 1])
+
+  data_set = {'date': date, 'time': time, 'latitude': latitude, 'longitude': longitude,
+              'elevation_meters': elevation_m, 'elevation_feet': elevation_ft, 'elevation_change_feet': elevation_feet_delta,
+              'distance_meters': distance_m, 'distance_feet': distance_ft, 'distance_miles': distance_mi, 'heart_rate': hr}
+
+  df_temp = pd.DataFrame(data_set)
+
+  df = pd.concat([df, df_temp])
+
+df['date'] = pd.to_datetime(df['date'])
+df['time'] = pd.to_timedelta(df['time'])
+
+df = df.sort_values(by=['date', 'time'])
+
+df.to_csv('running_data.csv', index=False)
+      

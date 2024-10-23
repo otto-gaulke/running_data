@@ -11,7 +11,9 @@ if 'parse_history.txt' not in host_files:
     pass
 
 with open('parse_history.txt', 'r') as parse_read:
-  parsed_files = parse_read.read().splitlines()
+  parsed_files = parse_read.read().split(',')
+
+del parsed_files[0]
 
 cols = ['date', 'time', 'latitude', 'longitude',
         'elevation_meters', 'elevation_feet', 'elevation_change_feet',
@@ -63,17 +65,26 @@ for parse in files_parse:
       elevation_ft_delta.append(elevation_ft[index] - elevation_ft[index - 1])
 
   data_set = {'date': date, 'time': time, 'latitude': latitude, 'longitude': longitude,
-              'elevation_meters': elevation_m, 'elevation_feet': elevation_ft, 'elevation_change_feet': elevation_feet_delta,
+              'elevation_meters': elevation_m, 'elevation_feet': elevation_ft, 'elevation_change_feet': elevation_ft_delta,
               'distance_meters': distance_m, 'distance_feet': distance_ft, 'distance_miles': distance_mi, 'heart_rate': hr}
 
   df_temp = pd.DataFrame(data_set)
 
   df = pd.concat([df, df_temp])
 
+os.chdir('..')
+
 df['date'] = pd.to_datetime(df['date'])
 df['time'] = pd.to_timedelta(df['time'])
 
-df = df.sort_values(by=['date', 'time'])
+df = df.sort_values(by=['date', 'time'], ignore_index=False)
 
 df.to_csv('running_data.csv', index=False)
-      
+
+parsed_files_string = ''
+
+for file in files_parse:
+  parsed_files_string += ',' + file
+
+with open('parse_history.txt', 'a') as f:
+  f.write(parsed_files_string)
